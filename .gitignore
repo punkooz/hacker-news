@@ -1,0 +1,24 @@
+node_modules
+.env
+.DS_Store
+dist
+build
+coverage
+.local
+*.log
+
+# Windows system folders
+$RECYCLE.BIN/
+System Volume Information/
+
+# Learning and context docs (not for production)
+docs/DOCKER_LEARNING.md
+docs/DOCKER_STORAGE_EXPLAINED.md
+docs/PRODUCTION_AND_CICD_EXPLAINED.md
+
+# Testing artifacts
+test-results/
+playwright-report/
+*_test_output.txt
+backend_test_output.txt
+frontend_test_output.txt
