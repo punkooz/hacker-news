@@ -20,7 +20,7 @@ module.exports = {
     test: {
         client: 'pg',
         connection: {
-            host: 'localhost',
+            host: process.env.DB_HOST || 'localhost',
             user: process.env.POSTGRES_USER || 'postgres',
             password: process.env.POSTGRES_PASSWORD || 'password',
             database: process.env.POSTGRES_DB_TEST || 'hackernews_test',
