@@ -1,0 +1,25 @@
+services:
+  # Backend Service
+  - type: web
+    name: hackernews-backend
+    env: node
+    plan: free
+    buildCommand: cd apps/backend && npm install
+    startCommand: cd apps/backend && npm run migrate && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # User must provide this from Neon
+    autoDeploy: true
+
+  # Frontend Service
+  - type: static
+    name: hackernews-frontend
+    env: static
+    buildCommand: cd apps/frontend && npm install && npm run build
+    publishDir: apps/frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false # User must provide the Backend URL here
+    autoDeploy: true
