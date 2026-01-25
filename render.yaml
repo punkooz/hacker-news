@@ -13,10 +13,9 @@ services:
         sync: false # User must provide this from Neon
     autoDeploy: true
 
+staticSites:
   # Frontend Service
-  - type: static
-    name: hackernews-frontend
-    env: static
+  - name: hackernews-frontend
     buildCommand: cd apps/frontend && npm install && npm run build
     publishDir: apps/frontend/dist
     envVars:
