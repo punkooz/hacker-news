@@ -9,6 +9,8 @@ describe('Sorting and Search API', () => {
 
     beforeAll(async () => {
         await db.migrate.latest();
+        await db('posts').del(); // Clear existing posts
+        await db('users').del(); // Clear existing users
 
         // Create user
         const userRes = await request(app)

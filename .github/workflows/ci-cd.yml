@@ -48,6 +48,10 @@ jobs:
           POSTGRES_DB: hackernews_test
           DB_HOST: localhost
         run: |
+          echo "Debug: Checking DB Connection"
+          echo "DB_HOST is $DB_HOST"
+          sudo apt-get install -y postgresql-client
+          PGPASSWORD=$POSTGRES_PASSWORD psql -h $DB_HOST -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT 1"
           npx knex migrate:latest --env test
           npm test
 
@@ -56,10 +60,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
@@ -88,7 +92,7 @@ jobs:
     if: github.event_name == 'push'
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -116,10 +120,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
       
