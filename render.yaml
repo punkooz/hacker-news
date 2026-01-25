@@ -17,7 +17,6 @@ services:
   - type: web
     name: hackernews-frontend
     env: static
-    plan: free
     buildCommand: cd apps/frontend && npm install && npm run build
     staticPublishPath: apps/frontend/dist
     envVars:
