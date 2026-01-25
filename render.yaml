@@ -13,11 +13,13 @@ services:
         sync: false # User must provide this from Neon
     autoDeploy: true
 
-staticSites:
   # Frontend Service
-  - name: hackernews-frontend
+  - type: web
+    name: hackernews-frontend
+    env: static
+    plan: free
     buildCommand: cd apps/frontend && npm install && npm run build
-    publishDir: apps/frontend/dist
+    staticPublishPath: apps/frontend/dist
     envVars:
       - key: VITE_API_URL
         sync: false # User must provide the Backend URL here
