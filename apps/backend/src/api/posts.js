@@ -244,7 +244,7 @@ router.delete('/:postId/comments/:commentId', authenticateToken, async (req, res
 // GET /posts/:id/comments - Get comments for post
 router.get('/:id/comments', async (req, res) => {
     const postId = req.params.id;
-    const maxDepth = parseInt(req.query.maxDepth) || 2;  // Default: 3 levels (0, 1, 2)
+    const maxDepth = req.query.maxDepth !== undefined ? parseInt(req.query.maxDepth) : 2;  // Default: 3 levels (0, 1, 2)
     const parentId = req.query.parentId || null;  // For lazy loading
 
     try {
