@@ -146,15 +146,37 @@ router.post('/:id/comments', authenticateToken, async (req, res) => {
     if (!content) return res.status(400).json({ error: 'Content required' });
 
     try {
+        let depth = 0;
+
+        // Calculate depth if this is a reply
+        if (parent_id) {
+            const parent = await db('comments').where('id', parent_id).first();
+            if (!parent) {
+                return res.status(400).json({ error: 'Parent comment not found' });
+            }
+            depth = parent.depth + 1;
+
+            // Enforce max depth (prevent abuse)
+            if (depth > 10) {
+                return res.status(400).json({ error: 'Maximum nesting depth exceeded' });
+            }
+        }
+
         const [comment] = await db('comments').insert({
             content,
             post_id: postId,
             author_id: req.user.id,
-            parent_id: parent_id || null
+            parent_id: parent_id || null,
+            depth: depth
         }).returning('*');
 
         // Increment comments count on post
         await db('posts').where('id', postId).increment('comments_count', 1);
+
+        // Increment parent's replies count
+        if (parent_id) {
+            await db('comments').where('id', parent_id).increment('replies_count', 1);
+        }
 
         // Fetch author username for convenience
         const user = await db('users').where('id', req.user.id).first();
@@ -207,6 +229,11 @@ router.delete('/:postId/comments/:commentId', authenticateToken, async (req, res
         // Decrement comments count on post
         await db('posts').where('id', postId).decrement('comments_count', 1);
 
+        // Decrement parent's replies count
+        if (comment.parent_id) {
+            await db('comments').where('id', comment.parent_id).decrement('replies_count', 1);
+        }
+
         res.json({ message: 'Comment deleted' });
     } catch (error) {
         console.error(error);
@@ -216,16 +243,30 @@ router.delete('/:postId/comments/:commentId', authenticateToken, async (req, res
 
 // GET /posts/:id/comments - Get comments for post
 router.get('/:id/comments', async (req, res) => {
+    const postId = req.params.id;
+    const maxDepth = req.query.maxDepth !== undefined ? parseInt(req.query.maxDepth) : 2;  // Default: 3 levels (0, 1, 2)
+    const parentId = req.query.parentId || null;  // For lazy loading
+
     try {
-        const comments = await db('comments')
+        let query = db('comments')
             .join('users', 'comments.author_id', 'users.id')
             .select('comments.*', 'users.username as author')
-            .where('comments.post_id', req.params.id)
-            .orderBy('comments.created_at', 'asc');
+            .where('comments.post_id', postId);
+
+        if (parentId) {
+            // Lazy load: fetch children of specific parent
+            query = query.where('comments.parent_id', parentId);
+        } else {
+            // Initial load: fetch shallow tree only
+            query = query.where('comments.depth', '<=', maxDepth);
+        }
+
+        const comments = await query.orderBy('comments.created_at', 'asc');
 
         const commentMap = {};
         comments.forEach(c => {
             c.replies = [];
+            c.hiddenRepliesCount = Math.max(0, (c.replies_count || 0) - c.replies.length);
             commentMap[c.id] = c;
         });
 
@@ -233,12 +274,15 @@ router.get('/:id/comments', async (req, res) => {
         comments.forEach(c => {
             if (c.parent_id && commentMap[c.parent_id]) {
                 commentMap[c.parent_id].replies.push(c);
-            } else {
+                // Update parent's hidden count
+                commentMap[c.parent_id].hiddenRepliesCount =
+                    Math.max(0, (commentMap[c.parent_id].replies_count || 0) - commentMap[c.parent_id].replies.length);
+            } else if (!c.parent_id) {
                 roots.push(c);
             }
         });
 
-        res.json(roots);
+        res.json(parentId ? comments : roots);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'server error' });
